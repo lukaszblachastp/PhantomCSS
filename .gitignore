@@ -1,3 +1,5 @@
 node_modules
-screenshots
-failures
+img
+config.js
+report.json
+tasks

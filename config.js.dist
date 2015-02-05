@@ -1,0 +1,25 @@
+module.exports = {
+    viewports: [
+        { width: 1280, height: 1024 },
+        { width: 768, height: 1024 },
+        { width: 480, height: 320 }
+    ],
+
+    environments: {
+        production: 'http://somehost.com',
+        stage: 'http://stage.somehost.com'
+    },
+
+    phantomcss: {
+        hideElements: '#thing.selector',
+
+        // Resemble.js settings
+        outputSettings: {
+            errorColor: { red: 255, green: 0, blue: 255 },
+            // flat | movement | flatDifferenceIntensity | movementDifferenceIntensity
+            errorType: 'flatDifferenceIntensity',
+            transparency: 1,
+            largeImageThreshold: 0
+        }
+    }
+};
