@@ -1,13 +1,11 @@
-**Huddle is Hiring!** We're always looking for talented Developers and Test Engineers. Visit http://www.huddle.com/careers for open vacancies now, or register your interest for the future.
-
-PhantomCSS
+pediff.js
 ==========
 
 **CSS regression testing**. A [CasperJS](http://github.com/n1k0/casperjs) module for automating visual regression testing with [PhantomJS](http://github.com/ariya/phantomjs/) and [Resemble.js](http://huddle.github.com/Resemble.js/). For testing Web apps, live style guides and responsive layouts. Read more on Huddle's Engineering blog: [CSS Regression Testing](http://tldr.huddle.com/blog/css-testing/).
 
 ### What?
 
-PhantomCSS takes screenshots captured by CasperJS and compares them to baseline images using [Resemble.js](http://huddle.github.com/Resemble.js/) to test for rgb pixel differences. PhantomCSS then generates image diffs to help you find the cause.
+pediff.js takes screenshots captured by CasperJS and compares them to baseline images using [Resemble.js](http://huddle.github.com/Resemble.js/) to test for rgb pixel differences. PhantomCSS then generates image diffs to help you find the cause.
 
 ![A failed visual regression test, pink areas show where padding has changed.](https://raw.github.com/Huddle/PhantomCSS/master/readme_assets/intro-example.png "Failed visual regression test")
 
@@ -314,4 +312,4 @@ Visit http://www.huddle.com/careers for open vacancies now, or register your int
 
 --------------------------------------
 
-PhantomCSS was created by [James Cryer](http://github.com/jamescryer) and the Huddle development team.
+pediff.js is based on PhantomCSS created by [James Cryer](http://github.com/jamescryer) and the Huddle development team.
