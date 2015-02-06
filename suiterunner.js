@@ -25,6 +25,13 @@ casper.start();
 casper.options.waitTimeout = 15000;
 phantomcss.clearAllScreenshots();
 
+casper.on("page.error", function logRemoteError(msg, trace) {
+    this.echo("Error:    " + msg, "ERROR");
+    this.echo("file:     " + trace[0].file, "WARNING");
+    this.echo("line:     " + trace[0].line, "WARNING");
+    this.echo("function: " + trace[0]["function"], "WARNING");
+});
+
 Object.keys(config.environments).forEach(function(key) {
     var env = {
         name: key,
@@ -43,16 +50,18 @@ Object.keys(config.environments).forEach(function(key) {
             });
 
             config.viewports.forEach(function testViewport(viewport) {
-                casper.open(env.url + taskConfig.path);
+                casper.thenOpen(env.url + taskConfig.path);
                 casper.then(function viewportTestInner() {
                     phantomcss.turnOffAnimations();
                     phantomcss.setViewport(viewport.width, viewport.height);
-                    //phantomcss.waitForImagesToBeLoaded(15000);
+                    phantomcss.waitForImagesToBeLoaded(15000);
                     task.execute.call(casper, phantomcss, taskConfig);
                 });
             });
 
-            casper.run(test.done);
+            casper.run(function() {
+                test.done();
+            });
         });
     });
 });
@@ -66,11 +75,7 @@ casper.test.begin('comparing environments', 2, function suite(test){
             phantomcss.compareEnvironments(baseEnv, env);
         });
     });
-    casper.run(test.done);
+    casper.run(function() {
+        test.done();
+    });
 });
-
-
-//casper.run(function(){
-//    console.log('\nTHE END');
-//    phantom.exit(phantomcss.getExitStatus());
-//});

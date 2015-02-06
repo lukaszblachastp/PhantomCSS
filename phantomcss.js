@@ -259,9 +259,7 @@ function compareEnvironments(env1, env2) {
     }
 
     function tryToResolve() {
-        console.log('trytoresolve', filesToGo);
         if(filesToGo<=0) {
-            console.log(JSON.stringify(tests));
             deferred.resolve(tests);
         }
     }
