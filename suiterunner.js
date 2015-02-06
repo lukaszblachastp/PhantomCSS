@@ -22,7 +22,6 @@ if(!tasks[0]) {
 
 pediff.init(config.pediff);
 casper.start();
-casper.options.waitTimeout = 15000;
 pediff.clearAllScreenshots();
 
 // casper.on('remote.message', function(msg) {
@@ -54,7 +53,7 @@ tasks.forEach(function testTask(task) {
                 casper.then(function viewportTestInner() {
                     pediff.setViewport(viewport.width, viewport.height);
                     pediff.turnOffAnimations();
-                    pediff.waitForImagesToBeLoaded(15000);
+                    pediff.waitForImagesToBeLoaded();
                     task.execute.call(casper, pediff, taskConfig);
                 });
             });

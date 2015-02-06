@@ -16,7 +16,6 @@ var _failures = '.' + fs.separator + 'failures';
 var exitStatus;
 var _hideElements;
 var _waitTimeout = 60000;
-var _addLabelToFailedImage = true;
 var _mismatchTolerance = 0.05;
 var _resembleOutputSettings;
 
@@ -29,7 +28,6 @@ var _packageName = 'default';
 var _viewportSize = '0x0';
 
 exports.screenshot = screenshot;
-exports.waitForTests = waitForTests;
 exports.waitForImagesToBeLoaded = waitForImagesToBeLoaded;
 exports.init = init;
 exports.update = update;
@@ -48,6 +46,8 @@ function update( options ) {
 	}
 
 	options = options || {};
+
+	casper.options.waitTimeout = options.defaultTimeout || 5000;
 
 	verboseMode = options.verbose || verboseMode;
 
@@ -77,10 +77,6 @@ function update( options ) {
 	_mismatchTolerance = options.mismatchTolerance || _mismatchTolerance;
 
 	_resembleOutputSettings = options.outputSettings || _resembleOutputSettings;
-
-	if ( options.addLabelToFailedImage !== undefined ) {
-		_addLabelToFailedImage = options.addLabelToFailedImage;
-	}
 }
 
 function init( options ) {
@@ -112,7 +108,7 @@ function waitForImagesToBeLoaded(milliseconds) {
             if(!images.length) return true;
             return Array.prototype.every.call(images, function(i) { return i.complete; });
         });
-    }, deferred.resolve, deferred.reject, milliseconds || 5000);
+    }, deferred.resolve, deferred.reject, milliseconds || casper.options.waitTimeout);
 
     return deferred.promise;
 }
@@ -176,14 +172,14 @@ function capture(srcPath, target) {
         if (isClipRect(target)) {
             casper.capture(srcPath, target);
         } else {
-            casper.captureSelector( srcPath, target);
+            casper.captureSelector(srcPath, target);
         }
 
         _onNewImage( {
             filename: srcPath
         } );
 	} catch ( ex ) {
-		log('Screenshot capture failed: ', ex.message);
+		casper.test.fail('Screenshot capture failed: ' + ex.message);
 	}
 }
 
@@ -219,9 +215,7 @@ function asyncCompare(one, two, func) {
 
 	casper.evaluate( function ( filename ) {
 		window._imagediff_.run( filename );
-	}, {
-		label: _addLabelToFailedImage ? one : false
-	} );
+	}, {} );
 
 	casper.waitFor(
 		function check() {
@@ -296,13 +290,15 @@ function compareEnvironments(env1, env2) {
                         },
                         function() {
                             var failFile;
+                        	var parts = file2.split(fs.separator);
+                        	var fname = parts.pop();
+                        	var mismatchPadded = "" + Math.round(mismatch*100);
 
-                            // flattened structure for failed diffs so that it is easier to preview
-                            if(mismatch) {
-                                failFile = file2.substr(0,file2.length-4) + '.' + Math.round(mismatch*100) + '.fail.png';
-                            } else {
-                                failFile = file2.substr(0,file2.length-4) + '.fail.png';
-                            }
+                        	while(mismatchPadded.length<5) {
+                        		mismatchPadded = '0'+mismatchPadded;
+                        	}
+
+                            failFile = parts.join(fs.separator) + fs.separator + mismatchPadded + '_' + fname;
 
                             casper.captureSelector(failFile, 'img');
                             test.failFile = failFile;
@@ -328,6 +324,11 @@ function compareEnvironments(env1, env2) {
                     );
                 } else {
                     test.success = true;
+                	var parts = file2.split(fs.separator);
+                	var fname = parts.pop();
+                	fname = parts.join(fs.separator)+fs.separator+'00000_'+fname;
+                    fs.copy(file2, fname);
+                    console.log('copied file:',file2, fname);
                     _onPass(test);
                     tryToResolve();
                 }
@@ -336,34 +337,6 @@ function compareEnvironments(env1, env2) {
     });
 
     return deferred.promise;
-}
-
-function waitForTests( tests ) {
-	casper.then( function () {
-		casper.waitFor( function () {
-				return tests.length === tests.reduce( function ( count, test ) {
-					if ( test.success || test.fail || test.error ) {
-						return count + 1;
-					} else {
-						return count;
-					}
-				}, 0 );
-			}, function () {
-				var fails = 0,
-					errors = 0;
-				tests.forEach( function ( test ) {
-					if ( test.fail ) {
-						fails++;
-					} else if ( test.error ) {
-						errors++;
-					}
-				} );
-				_onComplete( tests, fails, errors );
-			}, function () {
-
-			},
-			_waitTimeout );
-	} );
 }
 
 function initClient() {

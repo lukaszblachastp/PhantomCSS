@@ -6,12 +6,14 @@ module.exports = {
     ],
 
     environments: {
-        production: 'http://somehost.com',
-        stage: 'http://stage.somehost.com'
+        current: 'http://somehost.com/',
+        candidate: 'http://stage.somehost.com/'
     },
 
     phantomcss: {
+        defaultTimeout: 15000,
         verbose: true,
+        screenshotRoot: './img/',
         hideElements: '#thing.selector',
 
         // Resemble.js settings
