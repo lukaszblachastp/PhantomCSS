@@ -11,6 +11,7 @@ module.exports = {
     },
 
     phantomcss: {
+        verbose: true,
         hideElements: '#thing.selector',
 
         // Resemble.js settings
@@ -21,5 +22,10 @@ module.exports = {
             transparency: 1,
             largeImageThreshold: 0
         }
+    },
+
+    output: {
+        junit: true,
+        json: true
     }
 };

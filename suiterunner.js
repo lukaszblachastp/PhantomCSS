@@ -1,4 +1,4 @@
-var phantomcss = require('./phantomcss.js');
+var pediff = require('./pediff.js');
 var config = require('./config.js');
 var fs = require('fs');
 
@@ -20,48 +20,48 @@ if(!tasks[0]) {
     tasks[0] = require(tasksPath + tasks[0] + '.js');
 }
 
-phantomcss.init(config.phantomcss);
+pediff.init(config.pediff);
 casper.start();
 casper.options.waitTimeout = 15000;
-phantomcss.clearAllScreenshots();
+pediff.clearAllScreenshots();
 
-casper.on("page.error", function logRemoteError(msg, trace) {
-    this.echo("Error:    " + msg, "ERROR");
-    this.echo("file:     " + trace[0].file, "WARNING");
-    this.echo("line:     " + trace[0].line, "WARNING");
-    this.echo("function: " + trace[0]["function"], "WARNING");
-});
+// casper.on('remote.message', function(msg) {
+//     this.echo('remote message caught: ' + msg);
+// });
+// casper.on("page.error", function logRemoteError(msg, trace) {
+//     this.echo("Remote error:    " + msg, "ERROR");
+//     this.echo("file:     " + trace[0].file, "WARNING");
+//     this.echo("line:     " + trace[0].line, "WARNING");
+//     this.echo("function: " + trace[0]["function"], "WARNING");
+// });
 
-Object.keys(config.environments).forEach(function(key) {
-    var env = {
-        name: key,
-        url: config.environments[key]
-    };
 
-    tasks.forEach(function testTask(task) {
-        var taskConfig = task.config || {};
-        casper.test.begin(taskConfig.package || 'default', 2, function suite(test) {
+
+tasks.forEach(function testTask(task) {
+    var taskConfig = task.config || {};
+    casper.test.begin(taskConfig.package || 'default', 2, function suite(test) {
+
+        Object.keys(config.environments).forEach(function(envName) {
+            var baseUrl = config.environments[envName];
+
             casper.then(function testEnvironment() {
-                phantomcss.setEnvironment(env.name);
-            });
-
-            casper.then(function setPackageName() {
-                phantomcss.setPackage(taskConfig.package || 'default');
+                pediff.setEnvironment(envName);
+                pediff.setPackage(taskConfig.package || 'default');
             });
 
             config.viewports.forEach(function testViewport(viewport) {
-                casper.thenOpen(env.url + taskConfig.path);
+                casper.thenOpen(baseUrl + taskConfig.path);
                 casper.then(function viewportTestInner() {
-                    phantomcss.turnOffAnimations();
-                    phantomcss.setViewport(viewport.width, viewport.height);
-                    phantomcss.waitForImagesToBeLoaded(15000);
-                    task.execute.call(casper, phantomcss, taskConfig);
+                    pediff.setViewport(viewport.width, viewport.height);
+                    pediff.turnOffAnimations();
+                    pediff.waitForImagesToBeLoaded(15000);
+                    task.execute.call(casper, pediff, taskConfig);
                 });
             });
+        });
 
-            casper.run(function() {
-                test.done();
-            });
+        casper.run(function() {
+            test.done();
         });
     });
 });
@@ -72,7 +72,7 @@ casper.test.begin('comparing environments', 2, function suite(test){
             baseEnv = envs.shift();
 
         envs.forEach(function(env) {
-            phantomcss.compareEnvironments(baseEnv, env);
+            pediff.compareEnvironments(baseEnv, env);
         });
     });
     casper.run(function() {
