@@ -10,11 +10,15 @@ module.exports = {
         candidate: 'http://stage.somehost.com/'
     },
 
+    css: {
+        body: 'background-color: red',
+        '.selector-to-hide': 'display: none'
+    },
+
     phantomcss: {
         defaultTimeout: 15000,
         verbose: true,
         screenshotRoot: './img/',
-        hideElements: '#thing.selector',
 
         // Resemble.js settings
         outputSettings: {

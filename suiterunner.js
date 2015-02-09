@@ -53,7 +53,7 @@ tasks.forEach(function testTask(task) {
                 casper.then(function viewportTestInner() {
                     pediff.setViewport(viewport.width, viewport.height);
                     pediff.turnOffAnimations();
-                    pediff.waitForImagesToBeLoaded();
+                    pediff.injectCss(config.css, 'testing-css');
                     task.execute.call(casper, pediff, taskConfig);
                 });
             });

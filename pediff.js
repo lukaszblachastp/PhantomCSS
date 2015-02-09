@@ -38,7 +38,7 @@ exports.setPackage = setPackage;
 exports.clearAllScreenshots = clearAllScreenshots;
 exports.setViewport = setViewport;
 exports.compareEnvironments = compareEnvironments;
-
+exports.injectCss = injectCss;
 function update( options ) {
 
 	function stripslash( str ) {
@@ -137,15 +137,18 @@ function turnOffAnimations() {
 }
 
 function _fileNameGetter(root, filename) {
-    var name = _viewportSize + '_'
-        + _packageName.replace(/ /g, '-')
-        + (filename ? '@' + filename.replace(/ /g, '-') : '');
+    var name = _viewportSize + '_' +
+			_packageName.replace(/ /g, '-') +
+			(filename ? '@' + filename.replace(/ /g, '-') : '');
 	return root + fs.separator + name + '.png';
 }
 
-function screenshot( target, timeToWait, hideSelector, fileName ) {
-	var name;
+function screenshot(target, fileName, dontWaitForImages, timeToWait, hideSelector) {
+	if(!dontWaitForImages) {
+        waitForImagesToBeLoaded();
+	}
 
+	var name;
 	if ( isComponentsConfig( target ) ) {
 		for ( name in target ) {
 			if ( isComponentsConfig( target[ name ] ) ) {
@@ -155,10 +158,7 @@ function screenshot( target, timeToWait, hideSelector, fileName ) {
 			}
 		}
 	} else {
-		if ( isNaN( Number( timeToWait ) ) && ( typeof timeToWait === 'string' ) ) {
-			fileName = timeToWait;
-			timeToWait = void 0;
-		}
+		fileName = timeToWait;
 		waitAndHideToCapture( target, fileName, hideSelector, timeToWait );
 	}
 }
@@ -289,6 +289,11 @@ function compareEnvironments(env1, env2) {
                             });
                         },
                         function() {
+                        	if(isNaN(mismatch)) {
+                        		casper.echo("Unknown mismatch: " + mismatch);
+                        		_onFail(test); // casper.test.fail throws and error, this function call is aborted
+                                return; // Just to make it clear what is happening
+                        	}
                             var failFile;
                         	var parts = file2.split(fs.separator);
                         	var fname = parts.pop();
@@ -328,7 +333,6 @@ function compareEnvironments(env1, env2) {
                 	var fname = parts.pop();
                 	fname = parts.join(fs.separator)+fs.separator+'00000_'+fname;
                     fs.copy(file2, fname);
-                    console.log('copied file:',file2, fname);
                     _onPass(test);
                     tryToResolve();
                 }
@@ -340,7 +344,6 @@ function compareEnvironments(env1, env2) {
 }
 
 function initClient() {
-
 	casper.page.injectJs( _resemblePath );
 
 	casper.evaluate( function ( mismatchTolerance, resembleOutputSettings ) {
@@ -371,25 +374,25 @@ function initClient() {
 				}
 			};
 
-			function run( label ) {
+			function run() {
 
-				function render( data ) {
+				function render(data) {
 					var img = new Image();
 
-					img.onload = function () {
+					img.onload = function() {
 						window._imagediff_.hasImage = true;
 					};
-					document.getElementById( 'image-diff' ).appendChild( img );
-					img.src = data.getImageDataUrl( label );
+					document.getElementById('image-diff').appendChild(img);
+					img.src = data.getImageDataUrl();
 				}
 
 				resemble( document.getElementById( 'image-diff-one' ).files[ 0 ] ).
 				compareTo( document.getElementById( 'image-diff-two' ).files[ 0 ] ).
 				ignoreAntialiasing(). // <-- muy importante
-				onComplete( function ( data ) {
+				onComplete(function(data) {
 					var diffImage;
 
-					if ( Number( data.misMatchPercentage ) > mismatchTolerance ) {
+					if (Number(data.misMatchPercentage) > mismatchTolerance) {
 						result = data.misMatchPercentage;
 					} else {
 						result = false;
@@ -397,8 +400,8 @@ function initClient() {
 
 					window._imagediff_.hasResult = true;
 
-					if ( Number( data.misMatchPercentage ) > mismatchTolerance ) {
-						render( data );
+					if (Number(data.misMatchPercentage) > mismatchTolerance) {
+						render(data);
 					}
 
 				} );
@@ -501,4 +504,24 @@ function setViewport(width, height) {
 function clearAllScreenshots() {
     log('Removing all screenshots from path "'+ _screenshotRoot +'"');
     fs.removeTree(_screenshotRoot);
+}
+
+function injectCss(css, styleId) {
+	var plainCss, i;
+	if(typeof css!=='string') {
+		plainCss = '';
+		for(i in css) {
+			if(css.hasOwnProperty(i)) {
+				plainCss += "" + i + '{'+css[i]+'}';
+			}
+		}
+	}
+	casper.evaluate(function() {
+	    var style = document.createElement('style');
+	    if(styleId) {
+	    	style.id = styleId;
+	    }
+	    style.innerHTML = plainCss || css;
+	    document.body.appendChild(style);
+	});
 }
