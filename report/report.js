@@ -2,7 +2,7 @@
  * Iterate through all screenshots made for the first environment, extract specific data
  * from file names and save them as report.json
  */
-
+/* global phantom, casper */
 var fs = require('fs'),
     utils = require('utils'),
     config = require('./../config'),
@@ -44,21 +44,21 @@ for (i = 0; i < tasks.length; i++) {
             media: null,
             diff: -1,
             path: taskData.path || ''
-        })
+        });
     }
 
     for(k = 0; k < taskData.actions.length; k++) {
         var action = {
             file: filename,
             variants: []
-        }
+        };
         for (j = 0; j < taskData.options.viewports.length; j++) {
             action.variants.push({
                 viewportSize: taskData.options.viewports[j].width+'x'+taskData.options.viewports[j].height,
                 media: null,
                 diff: -1,
                 path: taskData.path || ''
-            })
+            });
         }
         task.actions[taskData.actions[k]] = action;
     }
@@ -72,11 +72,11 @@ for (i = 0; i < tasks.length; i++) {
                 action: null,
                 diff: -1,
                 path: taskData.path || ''
-            })
+            });
         }
     }
 
-    report.tasks[taskData.package] = task;
+    report.tasks[taskData['package']] = task;
 }
 
 //browse through analysed images and update tasks in report with difference value
@@ -84,6 +84,8 @@ for (i = 0; i < tasks.length; i++) {
 var files = fs.list(config.pediff.screenshotRoot + 'candidate/');
 for (i = 0; i < files.length; i++) {
     var filename = String(files[i]);
+
+    console.log(filename);
 
     var matches = /(\d+)_(\d+x\d+)(_(.[a-z]+))?_(.*)\./.exec(filename);
 
@@ -95,25 +97,26 @@ for (i = 0; i < files.length; i++) {
         action = /@(.[^_]*)/.exec(matches[5]),
         viewport = matches[2],
         media = matches[4],
-        diff = matches[1];
+        diff = matches[1],
+        variants;
 
     if(action) {
         action = action[1];
     }
 
-    if (media === undefined || media == 'null') {
+    if (media === undefined || media === 'null') {
         media = null;
     }
 
     if(action) {
         try {
-            var variants = report.tasks[name].actions[action].variants;
+            variants = report.tasks[name].actions[action].variants;
         } catch(e) {
             console.log('You probably have more than one task file in package "' + name + '"');
         }
     } else {
         try {
-        variants = report.tasks[name].variants;
+            variants = report.tasks[name].variants;
         } catch(e) {
             console.log('You probably use spaces in package name "' + name + '"');
         }
@@ -125,12 +128,6 @@ for (i = 0; i < files.length; i++) {
             break;
         }
     }
-
-    if(name==='homepage') {
-        console.log("TASK:",
-            JSON.stringify(report.tasks[name],null,' '));
-    }
-
 }
 
 if(config.output.junit) {
