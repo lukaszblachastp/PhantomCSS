@@ -15,7 +15,9 @@ module.exports = {
         '.selector-to-hide': 'display: none'
     },
 
-    phantomcss: {
+    cssmedia: 'screen', // print
+
+    pediff: {
         defaultTimeout: 15000,
         verbose: true,
         screenshotRoot: './img/',

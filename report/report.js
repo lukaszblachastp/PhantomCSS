@@ -85,8 +85,6 @@ var files = fs.list(config.pediff.screenshotRoot + 'candidate/');
 for (i = 0; i < files.length; i++) {
     var filename = String(files[i]);
 
-    console.log(filename);
-
     var matches = /(\d+)_(\d+x\d+)(_(.[a-z]+))?_(.*)\./.exec(filename);
 
     if (!utils.isArray(matches)) {

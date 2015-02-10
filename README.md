@@ -5,11 +5,11 @@ pediff.js
 
 ### What?
 
-pediff.js takes screenshots captured by CasperJS and compares them to baseline images using [Resemble.js](http://huddle.github.com/Resemble.js/) to test for rgb pixel differences. PhantomCSS then generates image diffs to help you find the cause.
+pediff.js takes screenshots captured by CasperJS and compares them to baseline images using [Resemble.js](http://huddle.github.com/Resemble.js/) to test for rgb pixel differences. pediff.js then generates image diffs to help you find the cause.
 
 ![A failed visual regression test, pink areas show where padding has changed.](https://raw.github.com/Huddle/PhantomCSS/master/readme_assets/intro-example.png "Failed visual regression test")
 
-Screenshot based regression testing can only work when UI is predictable. It's possible to hide mutable UI components with PhantomCSS but it would be better to test static pages or drive the UI with faked data during test runs.
+Screenshot based regression testing can only work when UI is predictable. It's possible to hide mutable UI components with pediff.js but it would be better to test static pages or drive the UI with faked data during test runs.
 
 ### Example
 
@@ -22,27 +22,25 @@ casper.
 		casper.click('button#open-dialog');
 		
 		// Take a screenshot of the UI component
-		phantomcss.screenshot('#the-dialog', 'a screenshot of my dialog');
+		pediff.screenshot('#the-dialog', 'a screenshot of my dialog');
 
 	});
 ```
 
 From the command line/terminal run
 
-* `casperjs test demo/testsuite.js`
+* `casperjs test suiterunner.js taskname`
 
 ### Download
 
-* `npm install phantomcss` (PhantomCSS is not itself a Node.js module)
-* `bower install phantomcss`
-* `git clone git://github.com/Huddle/PhantomCSS.git`
+* `git clone git://github.com/lukaszblachastp/pediff.js.git`
 
 ### Getting started, try the demo
 
 * Mac OSX users should first [install CasperJS 1.1-beta](http://docs.casperjs.org/en/latest/installation.html), easiest with Homebrew.  For convenience I've included CasperJS.bat for Windows users.
-* Download or clone this repo and run `casperjs test demo/testsuite.js` in command/terminal from the PhantomCSS folder.  PhantomJS is the only binary dependency - this should just work
+* Download or clone this repo and run `casperjs test suiterunner.js taskname` in command/terminal from the pediff.js folder.  PhantomJS is the only binary dependency - this should just work
 * Find the screenshot folder and have a look at the (baseline) images
-* Run the tests again with `casperjs test demo/testsuite.js`. New screenshots will be created to compare against the baseline images. These new images can be ignored, they will be replaced every test run.
+* Run the tests again with `casperjs test suiterunner.js taskname`. New screenshots will be created to compare against the baseline images. These new images can be ignored, they will be replaced every test run.
 * To test failure, add/change some CSS in the file demo/coffeemachine.html e.g. make `.mug` bright green
 * Run the tests again, you should see some reported failures
 * In the failures folder some images should have been created. The images should show bright pink where the screenshot has visually changed
@@ -51,33 +49,8 @@ From the command line/terminal run
 ### Options and setup
 
 ```javascript
-phantomcss.init({
-	/*
-		libraryRoot is relative to this file and must point to your phantomcss folder (not lib or node_modules). If you are using NPM, this will be './node_modules/phantomcss'
-	*/
-	libraryRoot: './modules/PhantomCSS',
-	
-	screenshotRoot: './screenshots',
-
-	/*
-		By default, failure images are put in the './failures' folder. If failedComparisonsRoot is set to false a separate folder will not be created but failure images can still be found alongside the original and new images.
-	*/
-	failedComparisonsRoot: './failures',
-
-	/*
-		Remove results directory tree after run.  Use in conjunction with failedComparisonsRoot to see failed comparisons
-	*/
-	cleanupComparisonImages: true,
-
-	/*
-		You might want to keep master/baseline images in a completely different folder to the diffs/failures.  Useful when working with version control systems. By default this resolves to the screenshotRoot folder.
-	*/
-	comparisonResultRoot: './results',
-
-	/*
-		Don't add label to generated failure image
-	*/
-	addLabelToFailedImage: false,
+pediff.init({
+	screenshotRoot: './img/',
 
 	/*
 		Mismatch tolerance defaults to  0.05%. Increasing this value will decrease test coverage
@@ -138,119 +111,10 @@ phantomcss.init({
 /*
 	Turn off CSS transitions and jQuery animations
 */
-phantomcss.turnOffAnimations();
-```
-
-### Don't like pink?
-
-![A failed visual regression test, yellow areas show where the icon has enlarged and pushed other elements down.](https://raw.github.com/Huddle/PhantomCSS/master/readme_assets/differentcolour.png "Failed visual regression test")
-
-```javascript
-phantomcss.init({
-	/*
-		Output styles for image failure outputs genrated by Resemble.js
-	*/
-	outputSettings: {
-
-		/*
-			Error pixel color, RGB, anything you want, 
-			though bright and ugly works best!
-		*/
-		errorColor: {
-			red: 255,
-			green: 255,
-			blue: 0
-		},
-		
-		/*
-			ErrorType values include 'flat', or 'movement'.  
-			The latter merges error color with base image
-			which makes it a little easier to spot movement.
-		*/
-		errorType: 'movement',
-		
-		/*
-			Fade unchanged areas to make changed areas more apparent.
-		*/
-		transparency: 0.3
-	}
-});
-```
-
-### There are different ways to take a screenshot
-
-```javascript
-var delay = 10;
-var hideElements = 'input[type=file]';
-var screenshotName = 'the_dialog'
-
-phantomcss.screenshot( "#CSS .selector", screenshotName);
-
-// phantomcss.screenshot({
-//  	'Screenshot 1 File name': {selector: '.screenshot1', ignore: '.selector'},
-//  	'Screenshot 2 File name': '#screenshot2'
-// });
-// phantomcss.screenshot( "#CSS .selector" );
-// phantomcss.screenshot( "#CSS .selector", delay, hideElements, screenshotName);
-
-// phantomcss.screenshot({
-//   top: 100,
-//   left: 100,
-//   width: 500,
-//   height: 400
-// }, screenshotName);
-```
-
-### Compare the images when and how you want
-
-```javascript
-/*
-	String is converted into a Regular expression that matches on full image path
-*/
-phantomcss.compareAll('exclude.test'); 
-
-// phantomcss.compareMatched('include.test', 'exclude.test');
-// phantomcss.compareMatched( new RegExp('include.test'), new RegExp('exclude.test'));
-
-/*
-	Compare image diffs generated in this test run only
-*/
-// phantomcss.compareSession();
-
-/*
-	Explicitly define what files you want to compare
-*/
-// phantomcss.compareExplicit(['/dialog.diff.png', '/header.diff.png']);
-
-/*
-	Get a list of image diffs generated in this test run
-*/
-// phantomcss.getCreatedDiffFiles();
-
-/*
-	Compare any two images, and wait for the results to complete
-*/
-// phantomcss.compareFiles(baseFile, diffFile);
-// phantomcss.waitForTests();
-
+pediff.turnOffAnimations();
 ```
 
 ### Best Practices
-
-##### Name your screenshots!
-
-By default PhantomCSS creates a file called screenshot_0.png, not very helpful.  You can name your screenshot by passing a string to either the second or forth parameter.
-
-```javascript
-var delay, hideElementsSelector;
-
-phantomcss.screenshot("#feedback-form", delay, hideElementsSelector, "Responsive Feedback Form");
-
-phantomcss.screenshot("#feedback-form", "Responsive Feedback Form");
-
-```
-
-Perhaps a better way is to use the ‘fileNameGetter’ callback property on the ‘init’ method. This does involve having a bit more structure around your tests.  See: https://github.com/Huddle/PhantomFlow/blob/master/lib/phantomCSSAdaptor.js#L41
 
 ##### CSS3 selectors for testing
 
@@ -258,16 +122,16 @@ Try not to use complex CSS3 selectors for asserting or creating screenshots.  In
 This is not a good idea:
 
 ```javascript
-phantomcss.screenshot("#sidebar li:nth-child(3) > div form");
+pediff.screenshot("#sidebar li:nth-child(3) > div form");
 ```
 
 But this is:
 
 ```javascript
-phantomcss.screenshot("#feedback-form");
+pediff.screenshot("#feedback-form");
 ```
 
-##### PhantomCSS should not be used to replace functional tests
+##### pediff.js should not be used to replace functional tests
 
 If you needed functional tests before, then you still need them.  Automated visual regression testing gives us coverage of CSS and design in a way we didn't have before, but that doesn't mean that conventional test assertions are now invalid.  Feedback time is crucial with test automation, the longer it takes the easier it is to ignore; the easier it is to ignore the sooner trust is lost from the team.  Unfortunately comparing images is not, and never will be as fast as simple DOM assertion.
 
@@ -285,7 +149,7 @@ There is also a technical problem with this approach, the larger the image, the 
 Scaling your test suite for many contributors may not be easy. [Resemble.js](http://huddle.github.com/Resemble.js/) (the core analysis engine of PhantomCSS) tries to consider image differences caused by different operating systems and graphics cards, but it's only so good, you are likely to see problems as more people contribute baseline screenshots.  You can mitigate this by hiding problematic elements such as select elements, file upload inputs etc. as so.
 
 ```javascript
-phantomcss.screenshot("#feedback-form", undefined, 'input[type=file]');
+pediff.screenshot("#feedback-form", undefined, 'input[type=file]');
 ```
 
 Below is an example of a false-negative caused by antialiasing differences on different machines. How can we solve this?  **Contributions welcome!**

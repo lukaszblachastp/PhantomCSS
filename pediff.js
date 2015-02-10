@@ -3,6 +3,9 @@
 James Cryer / Huddle / 2014
 https://github.com/Huddle/PhantomCSS
 http://tldr.huddle.com/blog/css-testing/
+
+Lukasz Blacha / Schinbsted Tech Polska / 2015
+https://github.com/lukaszblachastp/pediff.js
 */
 
 'use strict';
@@ -13,7 +16,6 @@ var verboseMode = false;
 
 var _screenshotRoot = '.' + fs.separator + 'img' + fs.separator;
 var _src = '.' + fs.separator + 'default';
-var _failures = '.' + fs.separator + 'failures';
 
 var exitStatus;
 var _hideElements;
@@ -41,6 +43,10 @@ exports.clearAllScreenshots = clearAllScreenshots;
 exports.setViewport = setViewport;
 exports.compareEnvironments = compareEnvironments;
 exports.injectCss = injectCss;
+exports.setRenderMedia = setRenderMedia;
+exports.convertImageToJpg = convertImageToJpg;
+
+
 function update(options) {
 
 	function stripslash(str) {
@@ -87,7 +93,7 @@ function getResemblePath(root) {
 
     var path = [ root, 'node_modules', 'resemblejs', 'resemble.js' ].join(fs.separator);
     if (!fs.isFile(path)) {
-        throw '[PhantomCSS] Resemble.js not found: ' + path;
+        throw '[pediff.js] resemble.js not found: ' + path;
     }
 
 	return path;
@@ -100,7 +106,6 @@ function log(message) {
 }
 
 function waitForImagesToBeLoaded(milliseconds) {
-    log('Waiting for all images to be loaded');
     casper.waitFor(function() {
         return this.evaluate(function() {
             var images = document.getElementsByTagName('img');
@@ -109,8 +114,10 @@ function waitForImagesToBeLoaded(milliseconds) {
             }
             return Array.prototype.every.call(images, function(i) { return i.complete; });
         });
-    }, function() {}, function() {}, milliseconds || casper.options.waitTimeout);
-    casper.wait(500);
+    }, function() {
+        log('Waiting for all images to be loaded');
+        casper.wait(250);
+    }, function() {}, milliseconds || casper.options.waitTimeout);
 }
 
 function turnOffAnimations() {
@@ -262,7 +269,7 @@ function compareEnvironments(env1, env2) {
 	}
 
     if (!fs.isFile(_resembleContainerPath)) {
-        throw new Error('[PhantomCSS] Can\'t find Resemble container.' +
+        throw new Error('[pediff.js] Can\'t find Resemble container.' +
         	'Perhaps the library root is mis configured. (' + _resembleContainerPath + ')');
     }
 
@@ -491,11 +498,13 @@ function getExitStatus() {
 }
 
 function setPackage(name) {
+    if(name===_packageName) return;
     _packageName = name || 'default';
     log('Package ' + _packageName);
 }
 
 function setEnvironment(name) {
+    if(name===_environmentName) return;
     _environmentName = name || 'default';
     _src = _screenshotRoot + _environmentName;
     log('Environment ' + _environmentName);
@@ -503,6 +512,7 @@ function setEnvironment(name) {
 
 function setViewport(width, height) {
     casper.viewport(width, height);
+    if(width+'x'+height===_viewportSize) return;
     _viewportSize = width+'x'+height;
     log('Viewport ' + _viewportSize);
 }
@@ -512,7 +522,7 @@ function clearAllScreenshots() {
     fs.removeTree(_screenshotRoot);
 }
 
-function injectCss(css, styleId) {
+function injectCss(css, media) {
 	var plainCss, i;
 	if(typeof css!=='string') {
 		plainCss = '';
@@ -522,16 +532,51 @@ function injectCss(css, styleId) {
 			}
 		}
 	}
-	casper.evaluate(function() {
-	    var style = document.createElement('style');
-	    if(styleId) {
-	    	style.id = styleId;
-	    }
-	    style.innerHTML = plainCss || css;
-	    document.body.appendChild(style);
-	});
+    casper.evaluate(function(plainCss, media) {
+        var style = document.createElement('style');
+        style.media = media || 'screen';
+        style.innerHTML = plainCss || css;
+        document.body.appendChild(style);
+    }, plainCss, media);
 }
 
-function convertImageType(path, dstType) {
+function setRenderMedia(mediaString) {
+    casper.evaluate(function (mediaString) {
+        var links = document.getElementsByTagName('link');
+        for (var i = 0, len = links.length; i < len; ++i) {
+            var link = links[i];
+            if (link.rel === 'stylesheet') {
+                if (link.media === 'screen') { link.media = ''; }
+                if (link.media === mediaString) { link.media = 'screen'; }
+            }
+        }
+    }, mediaString);
+    log('CSS rendering media "' + mediaString + '"');
+}
 
+function convertImageToJpg(dirname, filename) {
+    var dstName = dirname + filename.replace('.png', '.jpg');
+    casper.thenOpen(_resembleContainerPath, function() {
+        casper.evaluate(function(path) {
+            var img = document.createElement('img');
+            img.src = path;
+            img.id = 'image';
+            document.body.appendChild(img);
+            window.$$resembleReady = true;
+        }, dirname+filename);
+
+        casper.waitFor(function check() {
+            return this.evaluate(function() {
+                return window.$$resembleReady;
+            });
+        },
+        function() {
+            waitForImagesToBeLoaded();
+            casper.captureSelector(dstName, '#image');
+            casper.test.info('Converted "' + filename + '" to .jpg');
+        },
+        function() {
+            casper.echo('[Error] Waiting for image timeout');
+        });
+    });
 }
