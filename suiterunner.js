@@ -30,7 +30,7 @@ casper.on('page.error', function(err) {
 });
 
 casper.on('remote.message', function(msg) {
-    casper.echo(msg);
+    //casper.echo(msg);
 });
 
 pediff.clearAllScreenshots();
