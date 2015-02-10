@@ -4,3 +4,4 @@ config.js
 report.json
 junit.xml
 tasks
+.idea
