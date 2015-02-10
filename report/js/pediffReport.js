@@ -470,11 +470,11 @@ PediffReport.prototype = {
             filename;
 
         if(opt.env==='diff') {
-            filename = 'candidate/' + (hq? 'hq/':'') + opt.diff + '_' + opt.viewportSize + '_' + opt.name +
-            ((opt.action !== '') ? '@' + opt.action : '') + (hq ? '.png':'.jpg');
+            filename = 'candidate/' + (hq?'hq/':'') + opt.diff + '_' + opt.viewportSize + '_' + opt.name +
+                ((opt.action !== '') ? '@' + opt.action : '') + (hq?'.png':'.jpg');
         } else {
-            filename = opt.env + '/' + (hq? 'hq/':'') + opt.viewportSize + '_' + opt.name +
-            ((opt.action !== '') ? '@' + opt.action : '') + (hq ? '.png':'.jpg');
+            filename = opt.env + '/' + (hq?'hq/':'') + opt.viewportSize + '_' + opt.name +
+                ((opt.action !== '') ? '@' + opt.action : '') + (hq?'.png':'.jpg');
         }
         return self.options.imagesPath + filename;
     },

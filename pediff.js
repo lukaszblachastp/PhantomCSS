@@ -311,7 +311,7 @@ function compareEnvironments(env1, env2) {
                             var failFile;
                         	var parts = file2.split(fs.separator);
                         	var fname = parts.pop();
-                        	var mismatchPadded = '' + Math.round(mismatch*100);
+                        	var mismatchPadded = '' + Math.round(100-mismatch*100);
 
                         	while(mismatchPadded.length<5) {
                         		mismatchPadded = '0'+mismatchPadded;
@@ -345,7 +345,7 @@ function compareEnvironments(env1, env2) {
                     test.success = true;
                 	var parts = file2.split(fs.separator);
                 	var fname = parts.pop();
-                	fname = parts.join(fs.separator)+fs.separator+'00000_'+fname;
+                	fname = parts.join(fs.separator)+fs.separator+'10000_'+fname;
                     fs.copy(file2, fname);
                     _onPass(test);
                     tryToResolve();

@@ -32,7 +32,6 @@ casper.on('page.error', function(err) {
 casper.on('remote.message', function(msg) {
     casper.echo(msg);
 });
-/*
 
 pediff.clearAllScreenshots();
 
@@ -81,7 +80,6 @@ casper.test.begin('comparing environments', 0, function suite(test){
         test.done();
     });
 });
-*/
 
 casper.test.begin('Converting screenshots to .jpg', 0, function convertScreenshots(test) {
     var envNames = Object.keys(config.environments).slice(0,2);
