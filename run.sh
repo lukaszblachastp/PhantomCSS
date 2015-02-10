@@ -1,2 +1,2 @@
 #!/bin/bash
-casperjs test ./suiterunner.js --task=$1
+./node_modules/casperjs/bin/casperjs test ./suiterunner.js --task=$1

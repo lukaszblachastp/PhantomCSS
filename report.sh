@@ -1,2 +1,2 @@
 #!/bin/bash
-casperjs report/report.js
+./node_modules/casperjs/bin/casperjs report/report.js
