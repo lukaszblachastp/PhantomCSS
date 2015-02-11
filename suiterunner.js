@@ -102,5 +102,6 @@ casper.test.begin('Converting screenshots to .jpg', 0, function convertScreensho
 
     casper.run(function() {
         test.done();
+        casper.exit(0);
     });
 });
