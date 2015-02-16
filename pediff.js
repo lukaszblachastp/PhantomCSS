@@ -101,7 +101,7 @@ function getResemblePath(root) {
 
 function log(message) {
     if(verboseMode) {
-	    console.log('[pediff.js] ' + message);
+	    console.log('[pediff.js][' + (_packageName || 'default') + '] ' + message);
     }
 }
 
@@ -254,13 +254,14 @@ function asyncCompare(one, two, func) {
 	);
 }
 
-function compareEnvironments(env1, env2) {
+function compareEnvironments(env1, env2, packageName) {
     log('Comparing environment "' + env1 + '" with "' + env2 + '"');
     var tests = [],
         deferred = q.defer(),
+        filenameRegex = new RegExp('(\\d+x\\d+)_' + packageName.replace(/ /g,'-') + '(@.+)?\\.png'),
         files = fs.list(_screenshotRoot + env1)
             .filter(function(file) {
-                return file[0] !== '.';
+                return filenameRegex.test(file);
             }),
         filesToGo = files.length;
 
@@ -311,7 +312,7 @@ function compareEnvironments(env1, env2) {
                             var failFile;
                         	var parts = file2.split(fs.separator);
                         	var fname = parts.pop();
-                        	var mismatchPadded = '' + Math.round(100-mismatch*100);
+                        	var mismatchPadded = '' + Math.round(10000-parseFloat(mismatch)*100);
 
                         	while(mismatchPadded.length<5) {
                         		mismatchPadded = '0'+mismatchPadded;
@@ -556,6 +557,7 @@ function setRenderMedia(mediaString) {
 
 function convertImageToJpg(dirname, filename) {
     var dstName = dirname + filename.replace('.png', '.jpg');
+    
     casper.thenOpen(_resembleContainerPath, function() {
         casper.evaluate(function(path) {
             var img = document.createElement('img');
@@ -573,7 +575,7 @@ function convertImageToJpg(dirname, filename) {
         function() {
             waitForImagesToBeLoaded();
             casper.captureSelector(dstName, '#image');
-            casper.test.info('Converted "' + filename + '" to .jpg');
+            casper.test.info('Converted "' + filename + '"');
         },
         function() {
             casper.echo('[Error] Waiting for image timeout');

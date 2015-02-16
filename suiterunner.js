@@ -5,22 +5,13 @@ var config = require('./config.js');
 var fs = require('fs');
 
 var tasksPath = './tasks/';
-var tasks = [casper.cli.options.task];
+var taskName = casper.cli.options.task;
 
-if(!tasks[0]) {
-    tasks = fs.list(tasksPath)
-        .filter(function(taskFile) {
-            return taskFile.length>3 && taskFile.substr(taskFile.length-3)==='.js';
-        })
-        .map(function(taskFile) {
-            return require(tasksPath + taskFile);
-        });
-} else {
-    if(!fs.isFile(tasksPath + tasks[0] + '.js')) {
-        throw 'Unable to find task: ' + tasks[0];
-    }
-    tasks[0] = require(tasksPath + tasks[0] + '.js');
+if(!fs.isFile(tasksPath + taskName + '.js')) {
+    throw 'Unable to find task: ' + taskName;
 }
+
+var task = require(tasksPath + taskName);
 
 pediff.init(config.pediff);
 casper.start();
@@ -29,51 +20,48 @@ casper.on('page.error', function(err) {
     casper.echo(err, 'ERROR');
 });
 
-casper.on('remote.message', function(msg) {
-    //casper.echo(msg);
-});
+// casper.on('remote.message', function(msg) { casper.echo(msg); });
 
-pediff.clearAllScreenshots();
+// pediff.clearAllScreenshots();
 
-tasks.forEach(function testTask(task) {
-    var taskConfig = task.config || {};
-    casper.test.begin(taskConfig.package || 'default', 0, function suite(test) {
+task.config = task.config || {};
+task.config.package = task.config.package || 'default';
+casper.test.begin('[' + task.config.package + '] Capturing screenshots', 0, function suite(test) {
 
-        Object.keys(config.environments).forEach(function(envName) {
-            var baseUrl = config.environments[envName];
+    Object.keys(config.environments).forEach(function(envName) {
+        var baseUrl = config.environments[envName];
 
-            casper.then(function testEnvironment() {
-                pediff.setEnvironment(envName);
-                pediff.setPackage(taskConfig.package || 'default');
-            });
-
-            config.viewports.forEach(function testViewport(viewport) {
-                casper.thenOpen(baseUrl + taskConfig.path);
-                casper.then(function viewportTestInner() {
-                    pediff.setViewport(viewport.width, viewport.height);
-                    pediff.turnOffAnimations();
-                    if(config.cssmedia && config.cssmedia!=='screen') {
-                        pediff.setRenderMedia(config.cssmedia);
-                    }
-                    pediff.injectCss(config.css, config.cssmedia);
-                    task.execute.call(casper, pediff, taskConfig);
-                });
-            });
+        casper.then(function testEnvironment() {
+            pediff.setEnvironment(envName);
+            pediff.setPackage(task.config.package);
         });
 
-        casper.run(function() {
-            test.done();
+        config.viewports.forEach(function testViewport(viewport) {
+            casper.thenOpen(baseUrl + task.config.path);
+            casper.then(function viewportTestInner() {
+                pediff.setViewport(viewport.width, viewport.height);
+                pediff.turnOffAnimations();
+                if(config.cssmedia && config.cssmedia!=='screen') {
+                    pediff.setRenderMedia(config.cssmedia);
+                }
+                pediff.injectCss(config.css, config.cssmedia);
+                task.execute.call(casper, pediff, task.config);
+            });
         });
+    });
+
+    casper.run(function() {
+        test.done();
     });
 });
 
-casper.test.begin('comparing environments', 0, function suite(test){
+casper.test.begin('[' + task.config.package + '] comparing environments', 0, function suite(test) {
     casper.then(function compareEnvironments() {
         var envs = Object.keys(config.environments),
             baseEnv = envs.shift();
 
         envs.forEach(function(env) {
-            pediff.compareEnvironments(baseEnv, env);
+            pediff.compareEnvironments(baseEnv, env, task.config.package);
         });
     });
     casper.run(function() {
@@ -81,8 +69,9 @@ casper.test.begin('comparing environments', 0, function suite(test){
     });
 });
 
-casper.test.begin('Converting screenshots to .jpg', 0, function convertScreenshots(test) {
-    var envNames = Object.keys(config.environments).slice(0,2);
+casper.test.begin('[' + task.config.package + '] Converting screenshots to .jpg', 0, function convertScreenshots(test) {
+    var envNames = Object.keys(config.environments).slice(0,2),
+    filenameRegex = new RegExp('(\\d+_)?(\\d+x\\d+)_' + task.config.package.replace(/ /g,'-') + '(@.+)?\\.png');
 
     envNames.forEach(function(env) {
         var dirname = config.pediff.screenshotRoot + env + '/';
@@ -90,11 +79,13 @@ casper.test.begin('Converting screenshots to .jpg', 0, function convertScreensho
 
         fs.makeDirectory(dirname + 'hq/');
         images.forEach(function(filename) {
+            if(!filenameRegex.test(filename)) return;
+
             var fullPath = dirname + filename;
-            if(fs.isFile(dirname + filename) && fullPath.indexOf('.png')===fullPath.length-4) {
+            if(fs.isFile(fullPath)) {
                 pediff.convertImageToJpg(dirname, filename);
                 casper.then(function() {
-                    fs.move(dirname+filename, dirname + 'hq/' + filename);
+                    fs.move(fullPath, dirname + 'hq/' + filename);
                 });
             }
         });
