@@ -3,5 +3,5 @@ img
 config.js
 report.json
 junit.xml
-tasks
+tasks/*.js
 .idea
